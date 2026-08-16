@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Valorant ?</title>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Teko:wght@600;700&family=Oswald:wght@500;700&display=swap');
+
+    * {
+      box-sizing: border-box;
+      cursor: none !important;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      font-family: 'Oswald', sans-serif;
+      background: linear-gradient(rgba(15, 25, 35, 0.8), rgba(15, 25, 35, 0.9)), 
+                  url('https://images.contentstack.io/v3/assets/bltb6530b271fddd0b1/blt804369eb96ef8292/640f135b0d00f71089e900ae/VAL_WP_CinematicEp6Launch_1920x1080.jpg') center/cover no-repeat;
+      color: #fff;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* Viseur */
+    #crosshair {
+      position: fixed;
+      width: 20px;
+      height: 20px;
+      pointer-events: none;
+      z-index: 2147483647;
+      transform: translate(-50%, -50%);
+    }
+    #crosshair::before, #crosshair::after {
+      content: '';
+      position: absolute;
+      background: #00ffcc;
+      box-shadow: 0 0 6px #00ffcc;
+    }
+    #crosshair::before { top: 9px; left: 0; width: 20px; height: 2px; }
+    #crosshair::after { top: 0; left: 9px; width: 2px; height: 20px; }
+
+    /* Écran Start */
+    #startOverlay {
+      position: fixed;
+      inset: 0;
+      background: #0f1923;
+      z-index: 999999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: none !important;
+    }
+    #startOverlay h2 {
+      font-family: 'Teko', sans-serif;
+      font-size: 3.5rem;
+      color: #ff4655;
+      margin: 0 0 10px 0;
+      letter-spacing: 2px;
+    }
+    #startOverlay p {
+      font-size: 1.2rem;
+      color: #ece8e1;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Compteur */
+    #tracker {
+      position: absolute;
+      top: 3%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: 'Teko', sans-serif;
+      z-index: 10000;
+    }
+    #missCount { font-size: 2rem; color: #ece8e1; letter-spacing: 2px; }
+    #rankRoast { font-size: 1.4rem; color: #ff4655; letter-spacing: 1px; text-transform: uppercase; }
+
+    h1 {
+      position: absolute;
+      top: 12%;
+      font-family: 'Teko', sans-serif;
+      font-size: 3.5rem;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin: 0;
+      color: #ff4655;
+      text-shadow: 0 0 20px rgba(255, 70, 85, 0.8);
+      text-align: center;
+      z-index: 10000;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    button {
+      padding: 16px 36px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border: 2px solid transparent;
+      border-radius: 4px;
+      transition: transform 0.15s ease;
+      white-space: nowrap;
+    }
+
+    #yesBtn {
+      background-color: #ff4655;
+      color: #ece8e1;
+      box-shadow: 0 0 25px rgba(255, 70, 85, 0.6);
+      z-index: 1;
+      transform-origin: center center;
+    }
+
+    .no-button {
+      background-color: #ece8e1;
+      color: #0f1923;
+      border-color: #ff4655;
+      position: relative;
+      z-index: 9999;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+    /* Notification Riot */
+    #riotInvite {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #1f2326;
+      border-left: 4px solid #ff4655;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      z-index: 10000;
+      border-radius: 2px;
+      animation: slideIn 0.5s ease-out;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(120%); }
+      to { transform: translateX(0); }
+    }
+    .custom-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid #00ffcc;
+      background: linear-gradient(135deg, #ff4655, #0f1923);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 18px;
+      color: #ece8e1;
+      box-shadow: 0 0 10px rgba(0, 255, 204, 0.4);
+    }
+    .invite-text h4 { margin: 0; font-size: 16px; color: #fff; letter-spacing: 0.5px; }
+    .invite-text p { margin: 2px 0 0 0; font-size: 13px; color: #768079; }
+
+    /* Chat de Team */
+    #teamChat {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      width: 320px;
+      background: rgba(15, 25, 35, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 12px;
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 13px;
+      border-radius: 4px;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+    .chat-msg {
+      animation: fadeIn 0.3s ease-in;
+    }
+    .chat-user { font-weight: bold; color: #00ffcc; }
+    .chat-text { color: #ece8e1; }
+
+    /* Impact de balle */
+    .bullet-hole {
+      position: fixed;
+      width: 14px;
+      height: 14px;
+      background: radial-gradient(circle, #111 40%, #444 80%, transparent 100%);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 500;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 8px rgba(0, 255, 204, 0.6);
+      animation: puff 0.4s ease-out;
+    }
+    @keyframes puff {
+      0% { transform: translate(-50%, -50%) scale(2.5); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 0.85; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .shake {
+      animation: shakeAnim 0.15s ease-in-out;
+    }
+    @keyframes shakeAnim {
+      0% { transform: translate(0, 0); }
+      25% { transform: translate(-5px, 5px); }
+      50% { transform: translate(5px, -5px); }
+      75% { transform: translate(-5px, -5px); }
+      100% { transform: translate(0, 0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Viseur -->
+  <div id="crosshair"></div>
+
+  <div id="startOverlay" onclick="startApp()">
+    <h2>VALORANT LOBBY</h2>
+    <p>▶ CLIQUE ICI HOPHOPHOP</p>
+  </div>
+
+  <div id="tracker">
+    <div id="missCount">MISS : 0</div>
+    <div id="rankRoast">RANK : RADIANT (POUR L'INSTANT)</div>
+  </div>
+
+  <h1 id="title">Tu veux lancer une ranked Valorant ?</h1>
+  
+  <div class="buttons">
+    <button id="yesBtn" onclick="acceptInvitation()">OUI (INSTALLER SPIKE)</button>
+    <button id="mainNoBtn" class="no-button">Non</button>
+  </div>
+
+  <!-- Chat en jeu -->
+  <div id="teamChat">
+    <div class="chat-msg"><span class="chat-user">[Équipe] Reyna:</span> <span class="chat-text">lancez vite svp</span></div>
+  </div>
+
+  <!-- Invite Riot -->
+  <div id="riotInvite">
+    <div class="custom-avatar">MB</div>
+    <div class="invite-text">
+      <h4>Mamalabest (En attente)</h4>
+      <p>T'a invité dans le groupe [Compétition]</p>
+    </div>
+  </div>
+
+  <script>
+    let audioCtx = null;
+
+    function startApp() {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      document.getElementById('startOverlay').style.display = 'none';
+    }
+
+    function playDashSound() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const now = audioCtx.currentTime;
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(850, now);
+      osc.frequency.exponentialRampToValueAtTime(100, now + 0.12);
+
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.12);
+    }
+
+    function playVictoryFanfare() {
+      if (!audioCtx) return;
+      const notes = [
+        { f: 523.25, d: 0.12 },
+        { f: 523.25, d: 0.12 },
+        { f: 523.25, d: 0.12 },
+        { f: 659.25, d: 0.35 },
+        { f: 783.99, d: 0.5 }
+      ];
+
+      let startTime = audioCtx.currentTime;
+      notes.forEach((note) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(note.f, startTime);
+
+        gain.gain.setValueAtTime(0.3, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + note.d);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + note.d);
+
+        startTime += note.d * 0.85;
+      });
+    }
+
+    // Curseur
+    const crosshair = document.getElementById('crosshair');
+    window.addEventListener('mousemove', (e) => {
+      crosshair.style.left = e.clientX + 'px';
+      crosshair.style.top = e.clientY + 'px';
+    });
+
+    // Impacts de balles au clic
+    window.addEventListener('pointerdown', (e) => {
+      if (document.getElementById('startOverlay').style.display === 'none') {
+        const hole = document.createElement('div');
+        hole.className = 'bullet-hole';
+        hole.style.left = e.clientX + 'px';
+        hole.style.top = e.clientY + 'px';
+        document.body.appendChild(hole);
+
+        setTimeout(() => hole.remove(), 8000);
+      }
+    });
+
+    const mainNoBtn = document.getElementById('mainNoBtn');
+    const yesBtn = document.getElementById('yesBtn');
+    const title = document.getElementById('title');
+    const missText = document.getElementById('missCount');
+    const rankRoast = document.getElementById('rankRoast');
+    const teamChat = document.getElementById('teamChat');
+
+    let misses = 0;
+    let yesScale = 1;
+    let phraseIndex = 0;
+
+    const chatMessages = [
+      { user: "Omen", text: "mais t'as quel shoot là ???" },
+      { user: "Reyna", text: "Nice whiff bro 💀" },
+      { user: "Jett", text: "FF 15 c'est trop" },
+      { user: "Sova", text: "Mon drone vise mieux que toi" },
+      { user: "Sage", text: "Je te heal même pas." },
+      { user: "Brimstone", text: "CLIQUE SUR OUI ON VEUT JOUER" }
+    ];
+    let chatIndex = 0;
+
+    function addChatMessage() {
+      if (chatIndex < chatMessages.length) {
+        const msg = document.createElement('div');
+        msg.className = 'chat-msg';
+        msg.innerHTML = `<span class="chat-user">[Équipe] ${chatMessages[chatIndex].user}:</span> <span class="chat-text">${chatMessages[chatIndex].text}</span>`;
+        teamChat.appendChild(msg);
+        chatIndex++;
+      }
+    }
+
+    const phrases = [
+      "Revive me Jett !",
+      "Watch this... 💨",
+      "Tu miss tous tes tirs",
+      "Erreur 404 : Crosshair placement ?",
+      "Instalock Reyna",
+      "Clutch or kick",
+      "Allez clique sur OUI"
+    ];
+
+    function relocate(btn) {
+      const padding = 25;
+      const maxX = window.innerWidth - btn.offsetWidth - padding;
+      const maxY = window.innerHeight - btn.offsetHeight - padding;
+
+      const randomX = Math.max(padding, Math.floor(Math.random() * maxX));
+      const randomY = Math.max(padding, Math.floor(Math.random() * maxY));
+
+      btn.style.position = 'fixed';
+      btn.style.left = `${randomX}px`;
+      btn.style.top = `${randomY}px`;
+    }
+
+    function spawnClone() {
+      const clone = document.createElement('button');
+      clone.className = 'no-button';
+      clone.innerText = "Non";
+      document.body.appendChild(clone);
+      relocate(clone);
+      bindEvents(clone);
+    }
+
+    function handleNoInteraction(btn) {
+      playDashSound();
+
+      misses++;
+      missText.innerText = `MISS : ${misses}`;
+
+      if (misses % 2 === 0) addChatMessage();
+
+      if (misses >= 3 && misses < 6) rankRoast.innerText = "RANK : GOLD 1 (ÇA COMMENCE À WHIFF)";
+      else if (misses >= 6 && misses < 10) rankRoast.innerText = "RANK : SILVER (AIMLAB EST GRATUIT)";
+      else if (misses >= 10) rankRoast.innerText = "RANK : IRON 1 (DÉSINSTALLE LE JEU)";
+
+      if (misses === 4 || misses === 8) spawnClone();
+
+      document.body.classList.add('shake');
+      setTimeout(() => document.body.classList.remove('shake'), 150);
+
+      btn.innerText = phrases[phraseIndex];
+      phraseIndex = (phraseIndex + 1) % phrases.length;
+
+      yesScale += 0.3;
+      yesBtn.style.transform = `scale(${yesScale})`;
+
+      relocate(btn);
+    }
+
+    function bindEvents(btn) {
+      btn.addEventListener('mouseenter', () => handleNoInteraction(btn));
+      btn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        handleNoInteraction(btn);
+      });
+    }
+
+    bindEvents(mainNoBtn);
+
+    function acceptInvitation() {
+      playVictoryFanfare();
+      title.innerText = "MATCH TROUVÉ / VICTOIRE ! 🏆";
+      document.querySelectorAll('.no-button').forEach(el => el.remove());
+      yesBtn.style.transform = 'scale(1)';
+      yesBtn.innerText = "LANCEMENT DU JEU...";
+      document.getElementById('tracker').style.display = 'none';
+
+      confetti({
+        particleCount: 150,
+        spread: 90,
+        origin: { y: 0.6 },
+        colors: ['#ff4655', '#00ffcc', '#ffffff']
+      });
+    }
+  </script>
+
+</body>
+</html>
